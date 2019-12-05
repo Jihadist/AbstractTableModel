@@ -16,11 +16,18 @@ public:
   QVariant headerData(int section, Qt::Orientation orientation, int role) const;
   Qt::ItemFlags flags(const QModelIndex &index) const;
 
+  void insertRow(int row, const QStringList &items);
+
   void setHorizontalHeaderLabels(const QStringList &labels);
-  void sort(int column, Qt::SortOrder order = Qt::AscendingOrder);
+  //  void sort(int column, Qt::SortOrder order = Qt::AscendingOrder);
+
+  //  virtual bool insertRows (int position, int rows, const QModelIndex &
+  //  parent = QModelIndex()); virtual bool removeRows (int position, int rows,
+  //  const QModelIndex & parent = QModelIndex());
 
 private:
   QStringList m_columns;
+  QStringList m_headers;
 
   typedef QStringList TrackData;
   typedef QList<TrackData> Tracks;
