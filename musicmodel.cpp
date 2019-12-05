@@ -32,13 +32,15 @@ bool dateLess(const QString &lhs, const QString &rhs) {
 
 MusicModel::MusicModel(QObject *parent) { qDebug() << __PRETTY_FUNCTION__; }
 
-MusicModel::MusicModel() { qDebug() << __PRETTY_FUNCTION__; }
+// MusicModel::MusicModel() { qDebug() << __PRETTY_FUNCTION__; }
 
 int MusicModel::rowCount(const QModelIndex &parent) const {
   Q_UNUSED(parent)
   // qDebug() << __PRETTY_FUNCTION__;
   return m_tracks.size();
 }
+
+int MusicModel::rowCount() const { return rowCount(QModelIndex()); }
 
 int MusicModel::columnCount(const QModelIndex &parent) const {
   Q_UNUSED(parent)
@@ -49,6 +51,8 @@ int MusicModel::columnCount(const QModelIndex &parent) const {
     return 0;
   return m_tracks.first().size();
 }
+
+int MusicModel::columnCount() const { return columnCount(QModelIndex()); }
 
 QVariant MusicModel::data(const QModelIndex &index, int role) const {
   // qDebug() << __PRETTY_FUNCTION__;
@@ -103,7 +107,7 @@ Qt::ItemFlags MusicModel::flags(const QModelIndex &index) const {
 
 void MusicModel::insertRow(int row, const QStringList &items) {
   // qDebug() << __PRETTY_FUNCTION__;
-  if (row > rowCount(QModelIndex()))
+  if (row > rowCount())
     return;
   if (items.empty())
     return;

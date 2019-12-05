@@ -7,10 +7,12 @@ class MusicModel : public QAbstractTableModel {
   Q_OBJECT
 public:
   MusicModel(QObject *parent = 0);
-  MusicModel();
+  // MusicModel();
 
   int rowCount(const QModelIndex &parent) const;
+  int rowCount() const;
   int columnCount(const QModelIndex &parent) const;
+  int columnCount() const;
   QVariant data(const QModelIndex &index, int role) const;
   bool setData(const QModelIndex &index, const QVariant &value, int role);
   QVariant headerData(int section, Qt::Orientation orientation, int role) const;
