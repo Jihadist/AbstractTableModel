@@ -2,45 +2,19 @@
 
 #include <QDate>
 #include <QDebug>
+#include <QList>
+#include <QString>
+#include <QStringList>
 #include <QVariant>
 #include <algorithm>
 
-namespace {
-bool stringGreater(const QString &lhs, const QString &rhs) { return lhs > rhs; }
-bool ullGreater(const QString &lhs, const QString &rhs) {
-  return lhs.toULongLong() > rhs.toULongLong();
-}
-bool floatGreater(const QString &lhs, const QString &rhs) {
-  return lhs.toFloat() > rhs.toFloat();
-}
-bool dateGreater(const QString &lhs, const QString &rhs) {
-  return QDate::fromString(lhs, "yyyy-MM-dd") >
-         QDate::fromString(rhs, "yyyy-MM-dd");
-}
-bool stringLess(const QString &lhs, const QString &rhs) { return lhs < rhs; }
-bool ullLess(const QString &lhs, const QString &rhs) {
-  return lhs.toULongLong() < rhs.toULongLong();
-}
-bool floatLess(const QString &lhs, const QString &rhs) {
-  return lhs.toFloat() < rhs.toFloat();
-}
-bool dateLess(const QString &lhs, const QString &rhs) {
-  return QDate::fromString(lhs, "yyyy-MM-dd") <
-         QDate::fromString(rhs, "yyyy-MM-dd");
-}
-} // namespace
-
-MusicModel::MusicModel(QObject *parent) { qDebug() << __PRETTY_FUNCTION__; }
-
-// MusicModel::MusicModel() { qDebug() << __PRETTY_FUNCTION__; }
+MusicModel::MusicModel(QObject *parent) : QAbstractTableModel(parent) {}
 
 int MusicModel::rowCount(const QModelIndex &parent) const {
   Q_UNUSED(parent)
   // qDebug() << __PRETTY_FUNCTION__;
   return m_tracks.size();
 }
-
-int MusicModel::rowCount() const { return rowCount(QModelIndex()); }
 
 int MusicModel::columnCount(const QModelIndex &parent) const {
   Q_UNUSED(parent)
@@ -51,8 +25,6 @@ int MusicModel::columnCount(const QModelIndex &parent) const {
     return 0;
   return m_tracks.first().size();
 }
-
-int MusicModel::columnCount() const { return columnCount(QModelIndex()); }
 
 QVariant MusicModel::data(const QModelIndex &index, int role) const {
   // qDebug() << __PRETTY_FUNCTION__;
@@ -88,10 +60,10 @@ QVariant MusicModel::headerData(int section, Qt::Orientation orientation,
   if (orientation == Qt::Vertical) {
     return section;
   }
-  if (!(section > m_headers.size()))
+  if (!(section > m_headers.size() - 1))
     return QVariant(m_headers.at(section));
-  else
-    return QVariant();
+
+  return QVariant();
 }
 
 Qt::ItemFlags MusicModel::flags(const QModelIndex &index) const {
@@ -105,8 +77,25 @@ Qt::ItemFlags MusicModel::flags(const QModelIndex &index) const {
   return flags;
 }
 
+bool MusicModel::removeRows(int row, int count, const QModelIndex &index) {
+  Q_UNUSED(index)
+  if ((count < 1) || (row < 0) || ((row + count) > rowCount()))
+    return false;
+  if (m_tracks.empty())
+    return false;
+  beginRemoveRows(QModelIndex(), row, row + count - 1);
+
+  for (auto pos = row; pos < row + count; ++pos) {
+    m_tracks.removeAt(row);
+  }
+
+  endRemoveRows();
+  return true;
+}
+
 void MusicModel::insertRow(int row, const QStringList &items) {
   // qDebug() << __PRETTY_FUNCTION__;
+
   if (row > rowCount())
     return;
   if (items.empty())
@@ -116,87 +105,64 @@ void MusicModel::insertRow(int row, const QStringList &items) {
   emit endInsertRows();
 }
 
+bool MusicModel::removeColumns(int column, int count,
+                               const QModelIndex &parent) {
+  Q_UNUSED(parent)
+  if ((count < 1) || (column < 0) || ((column + count) > columnCount()))
+    return false;
+
+  emit beginRemoveColumns(QModelIndex(), column, column + count - 1);
+  for (auto &row : m_tracks) {
+    if (!row.isEmpty()) {
+      for (auto pos = column; pos < column + count; ++pos) {
+        if (column < row.size())
+          row.removeAt(column);
+      }
+    }
+  }
+  for (auto pos = column; pos < column + count; ++pos) {
+    if (column < m_headers.size()) {
+      m_headers.removeAt(column);
+    }
+  }
+  qDebug() << "Removed";
+  emit endRemoveColumns();
+  return true;
+}
+
 void MusicModel::setHorizontalHeaderLabels(const QStringList &labels) {
   // qDebug() << __PRETTY_FUNCTION__;
   if (!labels.empty())
     m_headers = labels;
 }
 
-// void MusicModel::sort(int column, Qt::SortOrder order) {
-
-//  QModelIndex tempIndex;
-//  int row = 0;
-//  while (!tempIndex.data().isNull()) {
-//    tempIndex = index(++row, column);
-//  }
-//  switch (order) {
-//  case Qt::AscendingOrder: {
-//    if (tempIndex.data().canConvert(QMetaType::QDate))
-//      std::sort(m_tracks.begin(), m_tracks.end(),
-//                [column](const TrackData &lhs, const TrackData &rhs) -> bool {
-//                  return dateGreater(lhs.at(column), rhs.at(column));
-//                });
-//    else {
-//      if (tempIndex.data().canConvert(QMetaType::Float))
-//        std::sort(m_tracks.begin(), m_tracks.end(),
-//                  [column](const TrackData &lhs, const TrackData &rhs) -> bool
-//                  {
-//                    return floatGreater(lhs.at(column), rhs.at(column));
-//                  });
-//      else {
-//        if (tempIndex.data().canConvert(QMetaType::ULongLong))
-//          std::sort(
-//              m_tracks.begin(), m_tracks.end(),
-//              [column](const TrackData &lhs, const TrackData &rhs) -> bool {
-//                return ullGreater(lhs.at(column), rhs.at(column));
-//              });
-//        else {
-//          if (tempIndex.data().canConvert(QMetaType::QString))
-//            std::sort(
-//                m_tracks.begin(), m_tracks.end(),
-//                [column](const TrackData &lhs, const TrackData &rhs) -> bool {
-//                  return stringGreater(lhs.at(column), rhs.at(column));
-//                });
-//        }
-//      }
-//    }
-//    break;
-//  }
-//  case Qt::DescendingOrder: {
-//    if (tempIndex.data().canConvert(QMetaType::QDate))
-//      std::sort(m_tracks.begin(), m_tracks.end(),
-//                [column](const TrackData &lhs, const TrackData &rhs) -> bool {
-//                  return dateLess(lhs.at(column), rhs.at(column));
-//                });
-//    else {
-//      if (tempIndex.data().canConvert(QMetaType::Float))
-//        std::sort(m_tracks.begin(), m_tracks.end(),
-//                  [column](const TrackData &lhs, const TrackData &rhs) -> bool
-//                  {
-//                    return floatLess(lhs.at(column), rhs.at(column));
-//                  });
-//      else {
-//        if (tempIndex.data().canConvert(QMetaType::ULongLong))
-//          std::sort(
-//              m_tracks.begin(), m_tracks.end(),
-//              [column](const TrackData &lhs, const TrackData &rhs) -> bool {
-//                return ullLess(lhs.at(column), rhs.at(column));
-//              });
-//        else {
-//          if (tempIndex.data().canConvert(QMetaType::QString))
-//            std::sort(
-//                m_tracks.begin(), m_tracks.end(),
-//                [column](const TrackData &lhs, const TrackData &rhs) -> bool {
-//                  return stringLess(lhs.at(column), rhs.at(column));
-//                });
-//        }
-//      }
-//    }
-//    break;
-//  }
-//  }
-
-//  dataChanged(createIndex(0, 0),
-//              createIndex(rowCount(QModelIndex()),
-//              columnCount(QModelIndex())));
+// void MusicModel::hideUnusedColumns(QVector<int> columns) {
+//  //  for (auto &i : columns) {
+//  //    m_headers.removeAt(i);
+//  //    for (auto &row : m_tracks)
+//  //      row.removeAt(i);
+//  //  }
+//  //  emit dataChanged(QModelIndex(), QModelIndex());
 //}
+
+bool MusicModel::hideUnusedColumns() {
+  QStringList *tempString = &m_tracks.first();
+  int len = tempString->length();
+  for (int index = 0; index != len; ++index) {
+    qDebug() << "Enter loop at index: " << index;
+    if (tempString->at(index).isEmpty()) {
+      removeColumns(index, 1);
+      qDebug() << "index" << index;
+      len = tempString->length();
+      // emit headerDataChanged(Qt::Vertical, index, index + 2);
+
+      --index;
+    }
+  }
+  return true;
+}
+
+const QStringList MusicModel::getUnusedColumns() {
+  return {"Retailer Territory", "Customer Territory", "Customer ID",  "Shared",
+          "Net (Local)",        "Currency (Local)",   "Exchange Rate"};
+}
