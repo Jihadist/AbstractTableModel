@@ -18,7 +18,6 @@ int MusicModel::rowCount(const QModelIndex &parent) const {
 
 int MusicModel::columnCount(const QModelIndex &parent) const {
   Q_UNUSED(parent)
-  // qDebug() << __PRETTY_FUNCTION__;
   if (m_tracks.isEmpty())
     return 0;
   if (m_tracks.first().isEmpty())
@@ -27,7 +26,6 @@ int MusicModel::columnCount(const QModelIndex &parent) const {
 }
 
 QVariant MusicModel::data(const QModelIndex &index, int role) const {
-  // qDebug() << __PRETTY_FUNCTION__;
   if (!index.isValid() || m_tracks.size() <= index.row() ||
       (role != Qt::DisplayRole && role != Qt::EditRole)) {
     return QVariant();
@@ -38,7 +36,6 @@ QVariant MusicModel::data(const QModelIndex &index, int role) const {
 
 bool MusicModel::setData(const QModelIndex &index, const QVariant &value,
                          int role) {
-  // qDebug() << __PRETTY_FUNCTION__;
   if (!index.isValid() || role != Qt::EditRole ||
       m_tracks.size() <= index.row()) {
     return false;
@@ -52,7 +49,6 @@ bool MusicModel::setData(const QModelIndex &index, const QVariant &value,
 
 QVariant MusicModel::headerData(int section, Qt::Orientation orientation,
                                 int role) const {
-  // qDebug() << __PRETTY_FUNCTION__;
   if (role != Qt::DisplayRole) {
     return QVariant();
   }
@@ -67,7 +63,6 @@ QVariant MusicModel::headerData(int section, Qt::Orientation orientation,
 }
 
 Qt::ItemFlags MusicModel::flags(const QModelIndex &index) const {
-  // qDebug() << __PRETTY_FUNCTION__;
   Qt::ItemFlags flags = QAbstractTableModel::flags(index);
   if (index.isValid()) {
 
@@ -93,8 +88,7 @@ bool MusicModel::removeRows(int row, int count, const QModelIndex &index) {
   return true;
 }
 
-void MusicModel::insertRow(int row, const QStringList &items) {
-  // qDebug() << __PRETTY_FUNCTION__;
+void MusicModel::insertRow(int row, const TrackData &items) {
 
   if (row > rowCount())
     return;
@@ -136,33 +130,17 @@ void MusicModel::setHorizontalHeaderLabels(const QStringList &labels) {
     m_headers = labels;
 }
 
-// void MusicModel::hideUnusedColumns(QVector<int> columns) {
-//  //  for (auto &i : columns) {
-//  //    m_headers.removeAt(i);
-//  //    for (auto &row : m_tracks)
-//  //      row.removeAt(i);
-//  //  }
-//  //  emit dataChanged(QModelIndex(), QModelIndex());
-//}
-
 bool MusicModel::hideUnusedColumns() {
-  QStringList *tempString = &m_tracks.first();
+  TrackData *tempString = &m_tracks.first();
   int len = tempString->length();
   for (int index = 0; index != len; ++index) {
     qDebug() << "Enter loop at index: " << index;
-    if (tempString->at(index).isEmpty()) {
+    if (tempString->at(index).toString().isEmpty()) {
       removeColumns(index, 1);
       qDebug() << "index" << index;
       len = tempString->length();
-      // emit headerDataChanged(Qt::Vertical, index, index + 2);
-
       --index;
     }
   }
   return true;
-}
-
-const QStringList MusicModel::getUnusedColumns() {
-  return {"Retailer Territory", "Customer Territory", "Customer ID",  "Shared",
-          "Net (Local)",        "Currency (Local)",   "Exchange Rate"};
 }

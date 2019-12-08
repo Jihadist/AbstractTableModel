@@ -2,6 +2,7 @@
 //#include "musicmodel.h"
 #include <QDate>
 #include <QDebug>
+#include <QMetaType>
 #include <QRegularExpression>
 #include <QRegularExpressionMatch>
 MusicSortFilterProxyModel::MusicSortFilterProxyModel() = default;
@@ -11,9 +12,11 @@ MusicSortFilterProxyModel::MusicSortFilterProxyModel(QObject *parent)
 
 bool MusicSortFilterProxyModel::lessThan(const QModelIndex &left,
                                          const QModelIndex &right) const {
+  int MetaTypeMoney = qRegisterMetaType<money>();
+  int MetaTypeUnsigned = qRegisterMetaType<counter>();
 
-  QVariant lhs = sourceModel()->data(left).toString();
-  QVariant rhs = sourceModel()->data(right).toString();
+  QVariant lhs = sourceModel()->data(left);
+  QVariant rhs = sourceModel()->data(right);
   // Date format is ("yyyy-MM-dd")
 
   if (lhs.canConvert(QMetaType::QDate)) {
@@ -23,18 +26,20 @@ bool MusicSortFilterProxyModel::lessThan(const QModelIndex &left,
         "13578])|(1[02])).31)|(((0[1,3-9])|(1[0-2])).(29|30)))))$");
     const QRegularExpressionMatch match = datePattern.match(lhs.toString());
     if (match.hasMatch()) {
-      // qDebug() << "Date compare" << lhs << ":" << rhs;
+      qDebug() << "Date compare" << lhs << ":" << rhs;
       return lhs.toDate() < rhs.toDate();
     }
   }
-  if (lhs.canConvert(QMetaType::Double)) {
-    // qDebug() << "Double compare" << lhs << ":" << rhs;
-    return lhs.toDouble() < rhs.toDouble();
+
+  if (lhs.type() == QVariant::Double) {
+    qDebug() << "Double compare" << lhs.type() << " " << lhs << ":" << rhs;
+    return lhs.toString().remove(QRegExp(" .*")).toInt() <
+           rhs.toString().remove(QRegExp(" .*")).toInt();
   }
-  if (lhs.canConvert(QMetaType::ULongLong)) {
-    // qDebug() << "ULongLong compare" << lhs << ":" << rhs;
+  if (lhs.type() == QVariant::ULongLong) {
+    qDebug() << "ULongLong compare" << lhs.type() << " " << lhs << ":" << rhs;
     return lhs.toULongLong() < rhs.toULongLong();
   }
-  // qDebug() << "String compare" << lhs << ":" << rhs;
+  qDebug() << "String compare" << lhs.type() << " " << lhs << ":" << rhs;
   return lhs.toString() < rhs.toString();
 }
